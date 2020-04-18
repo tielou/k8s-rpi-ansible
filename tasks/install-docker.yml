@@ -1,0 +1,25 @@
+---
+- name: Check if docker is installed
+  command: which docker
+  failed_when: false
+  changed_when: false
+  register: docker_present
+
+- name: Download docker install script
+  get_url:
+    url: https://get.docker.com/
+    dest: /tmp/docker.sh
+    mode: 0775
+  when: docker_present.rc == 1
+
+- name: Run Docker install convenience script.
+  command: /tmp/docker.sh
+  environment:
+    CHANNEL: stable
+  when: docker_present.rc == 1
+
+- name: Add deploy user to Docker group
+  user:
+    name: "{{ deploy_user }}"
+    group: docker
+    append: true

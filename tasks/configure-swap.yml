@@ -1,0 +1,10 @@
+---
+- name: Disable swap on RPIs
+  shell: |
+    dphys-swapfile swapoff &&
+    dphys-swapfile uninstall &&
+    update-rc.d -f dphys-swapfile remove &&
+    chmod -x /etc/init.d/dphys-swapfile &&
+    systemctl disable dphys-swapfile.service
+  when:
+    - ansible_swaptotal_mb > 0

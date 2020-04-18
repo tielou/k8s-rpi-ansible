@@ -1,0 +1,11 @@
+---
+- name: Deploy Traefik v2.2 ingress
+  k8s:
+    definition: "{{ lookup('file', lookup('vars', 'playbook_dir') + '/manifests/default/traefik-ingress.yml') | from_yaml_all | list }}"
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+  register: result
+  until: result is success
+  retries: 3
+  delay: 2
+  when: role == 'master'

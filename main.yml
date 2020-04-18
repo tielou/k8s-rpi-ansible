@@ -1,0 +1,23 @@
+---
+- hosts: k8s
+  become: true
+
+  vars_files:
+    - vars/main.yml
+
+  pre_tasks:
+    - import_tasks: tasks/configure-cgroups.yml
+    - import_tasks: tasks/configure-swap.yml
+
+  tasks:
+    - import_tasks: tasks/install-python.yml
+
+    - import_tasks: tasks/install-docker.yml
+
+    - import_tasks: tasks/install-k8s.yml
+
+    - import_tasks: tasks/install-nfs.yml
+      when: nfs_shares | length
+
+    - import_tasks: tasks/deploy-manifests.yml
+
