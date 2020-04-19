@@ -84,7 +84,7 @@ You can find the Traefik dashboard at `http://x.x.x.x:8080/dashboard/` Replace `
 ### NFS
 This playbook has the capability to set up an NFS server on one of the RPI's and let the other nodes mount it as well as use this share for persistant volume claims within Kubernetes.
 The default configuration of this playbook creates two NFS shares: `/srv/nfs` and `/srv/nfs_hdd`. I used this to have fast flash storage mounted and slower hdd storage (through an external hdd) for bigger files.
-To use them within PVC's, the PVC definition needs to carry the name of the storage class in the annotations. Per default they are `storage-ssd` and `storage-hdd` respectively. You can find an example of a full PVC definition in the [https://github.com/tielou/k8s-rpi-ansible/blob/master/manifests/user/nextcloud.yml](Nextcloud manifest).
+To use them within PVC's, the PVC definition needs to carry the name of the storage class in the annotations. Per default they are `storage-ssd` and `storage-hdd` respectively. You can find an example of a full PVC definition in the [Nextcloud manifest](https://github.com/tielou/k8s-rpi-ansible/blob/master/manifests/user/nextcloud.yml).
 
 
 ## Variables
