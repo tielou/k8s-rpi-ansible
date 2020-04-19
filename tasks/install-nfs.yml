@@ -28,7 +28,7 @@
   when: nfs == 'yes'
   register: nfs_config
 
-- name: Restart nfs immediatley when exports changed
+- name: Restart nfs if exports changed
   systemd:
     name: nfs-kernel-server
     state: restarted 
@@ -37,7 +37,6 @@
     - nfs == 'yes'
     - nfs_config.changed
 
-# Mount configuration.
 - name: Mount NFS volumes
   mount:
     name: "{{ item.mount }}"

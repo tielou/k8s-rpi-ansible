@@ -14,8 +14,8 @@
 
 - name: Wait for reboot to complete
   wait_for_connection:
-    connect_timeout: 20
+    connect_timeout: 15
     sleep: 5
-    delay: 5
+    delay: 10
     timeout: 120
   when: cgroups.changed

@@ -1,0 +1,95 @@
+# MySQL ConfigMap.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-config
+  namespace: nextcloud
+data:
+# Make sure to modify all of this!
+  MYSQL_DATABASE: nextcloud
+  MYSQL_USER: nextcloud
+  MYSQL_PASSWORD: nextcloud
+  MYSQL_ROOT_PASSWORD: nextcloud
+
+# PersistentVolumeClaim for nextcloud MySQL database.
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: nextcloud-db
+  namespace: nextcloud
+  labels:
+    app: nextcloud
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "storage-ssd"
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10M
+
+# MySQL Deployment.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: nextcloud
+  labels:
+    app: nextcloud
+spec:
+  selector:
+    matchLabels:
+      app: nextcloud
+      tier: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: nextcloud
+        tier: mysql
+    spec:
+      containers:
+      ### https://github.com/hypriot/rpi-mysql 
+      - image: hypriot/rpi-mysql:5.5
+        imagePullPolicy: IfNotPresent
+        name: mysql
+        envFrom:
+        - configMapRef:
+            name: mysql-config
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: nextcloud-db
+          mountPath: /var/lib/mysql
+        resources:
+          limits:
+            cpu: '2'
+            memory: '768Mi'
+          requests:
+            cpu: '500m'
+            memory: '512Mi'
+      volumes:
+      - name: nextcloud-db
+        persistentVolumeClaim:
+          claimName: nextcloud-db
+
+# MySQL Service.
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: nextcloud
+  labels:
+    app: nextcloud
+spec:
+  ports:
+  - port: 3306
+  selector:
+    app: nextcloud
+    tier: mysql
+  clusterIP: None

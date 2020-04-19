@@ -64,7 +64,7 @@
 
 - name: Deploy flannel networking
   k8s:
-    definition: "{{ lookup('file', lookup('vars', 'playbook_dir') + '/manifests/default/flannel-networking.yml') | from_yaml_all | list }}"
+    definition: "{{ lookup('template', lookup('vars', 'playbook_dir') + '/manifests/default/flannel-networking.yml') | from_yaml_all | list }}"
     kubeconfig: "{{ kubeconfig_path }}"
     state: present
   register: result
@@ -73,20 +73,20 @@
   run_once: True
   when: role == 'master'
 
-- name: Get the kubeadm join command from the Kubernetes master.
+- name: Register k8s join command from master
   command: kubeadm token create --print-join-command
   changed_when: false
   when: role == 'master'
-  register: kubernetes_join_command_result
+  register: kubernetes_join
 
-- name: Set the kubeadm join command globally.
+- name: Set the join command for the nodes
   set_fact:
     k8s_join: |
-      {{ kubernetes_join_command_result.stdout }}
-  when: kubernetes_join_command_result.stdout is defined
+      {{ kubernetes_join.stdout }}
+  when: kubernetes_join.stdout is defined
   delegate_to: "{{ item }}"
   delegate_facts: true
-  with_items: "{{ groups['all'] }}"
+  with_items: "{{ groups['k8s'] }}"
 
 - name: Let nodes join
   command: |

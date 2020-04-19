@@ -1,3 +1,4 @@
+# based on: https://github.com/kubernetes-incubator/external-storage/tree/master/nfs-client/deploy
 ---
 kind: ServiceAccount
 apiVersion: v1
@@ -59,27 +60,22 @@ roleRef:
   kind: Role
   name: leader-locking-nfs-client-provisioner
   apiGroup: rbac.authorization.k8s.io
-# NFS storage class ssd
 ---
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: storage-ssd
-provisioner: nfs-storage-ssd # must match deployment's PROVISIONER_NAME env var
+provisioner: nfs-storage-ssd # this value should be the same at environment variable PROVISIONER_NAME in the deployment
 parameters:
   archiveOnDelete: "false"
-
-# NFS storage class hdd
 ---
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: storage-hdd
-provisioner: nfs-storage-hdd # must match deployment's PROVISIONER_NAME env var
+provisioner: nfs-storage-hdd # this value should be the same at environment variable PROVISIONER_NAME in the deployment
 parameters:
   archiveOnDelete: "false"
-
-# NFS Deployment.
 ---
 kind: Deployment
 apiVersion: apps/v1
@@ -122,7 +118,7 @@ spec:
               mountPath: /persistentvolumes
           env:
             - name: PROVISIONER_NAME
-              value: storage-hdd
+              value: nfs-storage-hdd
             - name: NFS_SERVER
               value: {{ nfs_master_ip }}
             - name: NFS_PATH

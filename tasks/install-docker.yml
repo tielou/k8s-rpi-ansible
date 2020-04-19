@@ -12,11 +12,16 @@
     mode: 0775
   when: docker_present.rc == 1
 
-- name: Run Docker install convenience script.
+- name: Run Docker install script
   command: /tmp/docker.sh
   environment:
     CHANNEL: stable
   when: docker_present.rc == 1
+
+- name: Delete Docker install script
+  file:
+    path: /tmp/docker.sh
+    state: absent
 
 - name: Add deploy user to Docker group
   user:

@@ -5,7 +5,7 @@ deploy_user: "pi"
 # Kubernetes version.
 kubernetes_version: '1.18.2-00'
 
-# Define desired NFS shares here
+# Define desired NFS shares here. The current configuration inside the nfs-client.yml manifest is configured to set up 2 shares. If you want to set up more/less, make sure to adjust the manifest accordingly.
 nfs_shares:
   - share: /srv/nfs
     mount: /mnt/storage
@@ -20,3 +20,13 @@ pod_network_cidr: '10.244.0.0/16'
 
 # Path where to store your k8s config locally. This is the default path
 kubeconfig_path: ~/.kube/config
+
+# Define Kubernetes manifests to deploy here:
+k8s_user_manifests: []
+#   - path: mysql.yml
+#     namespace: nextcloud
+#   - path: nextcloud.yml
+#     namespace: nextcloud
+
+# # You can also use variables in your k8s manifests, this is for example used in the Nextcloud deployment
+# k8s_nextcloud_url: nextcloud.local
