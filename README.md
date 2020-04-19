@@ -23,7 +23,7 @@ git clone https://github.com/tielou/k8s-rpi-ansible.git
 ```
 Open the `vars/main.yml` in your favorite text editor and adjust the values as desired. Find a detailed declaration further down this readme.
 Afterwards open the `ìnventory` file and adjust the IP's accordingly to the static ones you set for your RPI's.
-Use the `role` variable in there to define which Kubernetes role (Master or Node) this RPI should become. If you want to set up an NFS server on one of the RPI's make sure to set `nfs=yes`for one of the hosts and define `nfs_shares` in the `vars/main.yml`.
+Use the `role` variable in there to define which Kubernetes role (Master or Node) this RPI should become. If you want to set up an NFS server on one of the RPI's make sure to set `nfs=yes` for one of the hosts and define `nfs_shares` in the `vars/main.yml`.
 If you want to connect to the RPI's through another user than `pi` change the `ansible_ssh_user` variable.
 You can then verify the connectivity to the RPI's through ansible by running:
 ```
