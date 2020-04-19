@@ -234,9 +234,9 @@ spec:
         - --entrypoints.web.Address=:80
         #- --entrypoints.web.http.redirections.entryPoint.to=websecure # enable this if you want to redirect all http to https traffic
         - --entrypoints.websecure.Address=:443
-        - --certificatesResolvers.myresolver.acme.email=thilo@wobker.co
+        - --certificatesResolvers.myresolver.acme.email=user@host.com
         - --certificatesresolvers.myresolver.acme.storage=/var/lib/traefik/acme.json
-        - --certificatesresolvers.myresolver.acme.caserver=https://acme-v02.api.letsencrypt.org/directory
+        - --certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory # this is the staging server, for valid certs change to: https://acme-v02.api.letsencrypt.org/directory
         - --certificatesResolvers.myresolver.acme.tlsChallenge=true
       volumes:
         - name: traefik-files

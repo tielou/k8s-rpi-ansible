@@ -1,7 +1,7 @@
 # k8s-rpi-ansible
 This Ansible playbook deploys a fully featured Kubernetes cluster built on a set of Raspberry Pi's.
 It includes the following features:
-* Kubernetes v1.18.2
+* Kubernetes v1.18.2
 * Flannel-based networking v0.12
 * (multiple) NFS shares across the Raspberry Pi's and the necessary client provisioner to create PVC's
 * Traefik v2.2 deployment as ingress load balancer for services with automatic Let's Encrypt capabilities
@@ -24,13 +24,16 @@ git clone https://github.com/tielou/k8s-rpi-ansible.git
 Open the `vars/main.yml` in your favorite text editor and adjust the values as desired. Find a detailed declaration further down.
 Afterwards open the `ìnventory` file and adjust the IP's accordingly to the static ones you set for your RPI's. If you want to connect to the RPI's through another user than `pi` change the `ansible_ssh_user` variable.
 If you would like to verify the connectivity and the Ansible configuration you can run:
-`ansible all -i inventory -m ping`
+````
+ansible all -i inventory -m ping
+```
 If this succeeds you can trigger the execution of the playbook by running:
-`ansible-playbook -i inventory main.yml`
+```
+ansible-playbook -i inventory main.yml
+```
 
 After the run succeeded you can verify the funtionality by running:
-`kubectl get nodes` and `kubectl get pods -A`
-The outputs should be similar to:
+`kubectl get nodes`
 ```
 NAME            STATUS   ROLES    AGE   VERSION
 tipi-master-1   Ready    master   1m   v1.18.2
@@ -38,10 +41,10 @@ tipi-node-1     Ready    <none>   1m   v1.18.2
 tipi-node-2     Ready    <none>   1m   v1.18.2
 tipi-node-3     Ready    <none>   1m   v1.18.2
 ```
-and respectively:
+and `kubectl get pods -A`
 ```
 NAMESPACE     NAME                                     READY   STATUS    RESTARTS   AGE
-default       nfs-client-provisioner-598449f86-zl8pq   2/2     Running   0          129m
+default       nfs-client-provisioner-598449f86-zl8pq   2/2     Running   0          26h
 kube-system   coredns-66bff467f8-k8rjd                 1/1     Running   0          26h
 kube-system   coredns-66bff467f8-sdhpt                 1/1     Running   0          26h
 kube-system   etcd-tipi-master-1                       1/1     Running   0          26h
@@ -56,11 +59,20 @@ kube-system   kube-proxy-4dhgz                         1/1     Running   0      
 kube-system   kube-proxy-7tgc4                         1/1     Running   0          26h
 kube-system   kube-proxy-d5hpg                         1/1     Running   0          26h
 kube-system   kube-scheduler-tipi-master-1             1/1     Running   0          26h
-kube-system   traefik-ingress-lb-b7k29                 1/1     Running   0          172m
-kube-system   traefik-ingress-lb-h9k4k                 1/1     Running   0          172m
-kube-system   traefik-ingress-lb-l57hf                 1/1     Running   0          172m
+kube-system   traefik-ingress-lb-b7k29                 1/1     Running   0          26h
+kube-system   traefik-ingress-lb-h9k4k                 1/1     Running   0          26h
+kube-system   traefik-ingress-lb-l57hf                 1/1     Running   0          26h
 ```
-### Traefik Dashboard
+### Traefik
+This playbook deploys Traefik 2.2 as ingress load balancer for the Kubernetes setup. Traefik exposes 2 public ports with this configuration on the nodes:
+* 80 for http (you can enable immediate redirect for all http traffic in the `traefik-ingress.yml`)
+* 443 for https
+Services with a Traefik ingress route will be exposed on all nodes through those ports. Traefik does the routing based on hostnames, thus you need a matching configruation for the hosts you have defined (public dns records, local dns records or modified hosts file).
+For all services which get exposed through 443, Traefik will automatically try to obtain a valid certificate from Let's Encrypt.
+In order for this to work make sure to fill in your proper e-mail address in the `traefik-ingress.yml` manifest and eventually switch to the production Let's Encrypt server (as default LE server, their staging server is set).
+
+You can find a sample Traefik configuration for a service at https://github.com/tielou/kubernetes-manifests-rpi/blob/master/traefik/sample-service.yml
+
 You can find the Traefik dashboard at `http://x.x.x.x:8080/dashboard/` Replace `x.x.x.x` with any of your node IP's
 
 ## Variables
