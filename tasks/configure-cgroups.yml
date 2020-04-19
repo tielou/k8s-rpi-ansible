@@ -1,0 +1,21 @@
+---
+- name: Enable cgroup features for docker
+  lineinfile:
+    path: /boot/cmdline.txt
+    backrefs: True
+    regexp: '(^.+rootwait(\s+(?!cgroup_enable=cpuset cgroup_enable=memory)[\w=/\-\.]+)*)\s*$'
+    line: '\1 cgroup_enable=cpuset cgroup_enable=memory'
+    state: present
+  register: cgroups
+
+- name: Reboot if changes to cgroups were made
+  shell: "reboot"
+  when: cgroups.changed
+
+- name: Wait for reboot to complete
+  wait_for_connection:
+    connect_timeout: 15
+    sleep: 5
+    delay: 10
+    timeout: 120
+  when: cgroups.changed

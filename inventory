@@ -1,0 +1,9 @@
+[k8s]
+master-1 ansible_host=192.168.0.150 role=master nfs=no
+node-1 ansible_host=192.168.0.151 role=node nfs=no
+node-2 ansible_host=192.168.0.152 role=node nfs=yes
+node-3 ansible_host=192.168.0.153 role=node nfs=no
+
+[k8s:vars]
+ansible_ssh_user=pi
+ansible_python_interpreter=/usr/bin/python3

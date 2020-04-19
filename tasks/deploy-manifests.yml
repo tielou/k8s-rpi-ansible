@@ -1,0 +1,38 @@
+---
+- name: Deploy Traefik v2.2 ingress
+  k8s:
+    definition: "{{ lookup('template', lookup('vars', 'playbook_dir') + '/manifests/default/traefik-ingress.yml') | from_yaml_all | list }}"
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+  register: result
+  run_once: True
+  until: result is success
+  retries: 3
+  delay: 2
+  when: role == 'master'
+
+- name: Create all necessary k8s namespaces
+  k8s:
+    name: "{{ item.namespace }}"
+    kubeconfig: "{{ kubeconfig_path }}"
+    kind: Namespace
+    state: present
+  with_items: "{{ k8s_user_manifests }}"
+  when: 
+    - role == 'master'
+    - k8s_user_manifests | length
+
+- name: Deploy user manifests
+  k8s:
+    definition: "{{ lookup('template', lookup('vars', 'playbook_dir') + '/manifests/user/' + '{{ item.path }}') | from_yaml_all | list }}"
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+  with_items: "{{ k8s_user_manifests }}"
+  run_once: True
+  register: result
+  until: result is success
+  retries: 3
+  delay: 2
+  when: 
+    - role == 'master'
+    - k8s_user_manifests | length

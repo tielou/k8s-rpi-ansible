@@ -1,0 +1,213 @@
+# Nextcloud ConfigMap.
+--- 
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nextcloud-config
+  namespace: nextcloud
+data:
+  TZ: Europe/Berlin
+  DEBUG: "false"
+  NEXTCLOUD_URL: https://{{ k8s_nextcloud_url }}
+  NEXTCLOUD_ADMIN_USER: admin
+  NEXTCLOUD_ADMIN_PASSWORD: admin
+  NEXTCLOUD_UPLOAD_MAX_FILESIZE: 20G
+  NEXTCLOUD_MAX_FILE_UPLOADS: "20"
+  NEXTCLOUD_DATA_DIR: /opt/nextcloud
+  NEXTCLOUD_TRUSTED_DOMAINS: {{ k8s_nextcloud_url }}
+  TRUSTED_PROXIES: {{ k8s_nextcloud_url }}
+  MYSQL_DATABASE: nextcloud
+  MYSQL_HOST: mysql.nextcloud.svc.cluster.local
+  MYSQL_PASSWORD: nextcloud
+  MYSQL_USER: nextcloud
+
+# PersistentVolumeClaim for Nextcloud files.
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: nextcloud
+  namespace: nextcloud
+  labels:
+    app: nextcloud
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "storage-hdd"
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 20G
+
+# Nextcloud Deployment
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextcloud
+  namespace: nextcloud
+  labels:
+    app: nextcloud
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: nextcloud
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: nextcloud
+        tier: frontend
+    spec:
+      containers:
+        - image: nextcloud:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: nextcloud-config
+          name: nextcloud
+          ports:
+            - containerPort: 80
+              name: nextcloud
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /var/www/html
+              subPath: "application"
+              name: nextcloud
+            - mountPath: /opt/nextcloud # this must match the env variable NEXTCLOUD_DATA_DIR defined in the Nextcloud config map
+              subPath: "files"
+              name: nextcloud
+      volumes:
+        - name: nextcloud
+          persistentVolumeClaim:
+            claimName: nextcloud
+
+# nextcloud Service definition.
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud
+  namespace: nextcloud
+  labels:
+    app: nextcloud
+spec:
+  ports:
+    - port: 80
+  selector:
+    app: nextcloud
+    tier: frontend
+  type: NodePort
+
+# nextcloud Horizontal Pod Autoscaler.
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: nextcloud
+  namespace: nextcloud
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: nextcloud
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 50
+
+################## Everything below this line requires a functional Traefik 2.2 deployment ##################
+
+# Nextcloud Ingress.
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: nextcloud-ingress
+  namespace: nextcloud
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - match: Host(`{{ k8s_nextcloud_url }}`)
+    kind: Rule
+    middlewares:
+    - name: nextcloud-redirect
+      namespace: nextcloud
+    - name: nextcloud-headers
+      namespace: nextcloud
+    - name: nextcloud-regex
+      namespace: nextcloud
+    services:
+    - name: nextcloud
+      port: 80
+  tls:
+    certResolver: myresolver
+    options:
+      name: mintls12
+      namespace: nextcloud
+
+# Traefik TLS Options.
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: TLSOption
+metadata:
+  name: mintls12
+  namespace: nextcloud
+spec:
+  minVersion: VersionTLS12                      
+  cipherSuites:                                 
+    - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+    - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+    - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
+    - TLS_AES_128_GCM_SHA256
+    - TLS_AES_256_GCM_SHA384
+    - TLS_CHACHA20_POLY1305_SHA256
+  sniStrict: true
+
+# Traefik redirect to https
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: nextcloud-redirect
+  namespace: nextcloud
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+
+# Traefik regex definition in order for caldav/carddav to work properly
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: nextcloud-regex
+  namespace: nextcloud
+spec:
+  redirectRegex:
+    permanent: true
+    regex: "https://(.*)/.well-known/(card|cal)dav"
+    replacement: "https://${1}/remote.php/dav/"
+    
+
+# Traefik modified Headers.
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: nextcloud-headers
+  namespace: nextcloud
+spec:
+  headers:
+    browserXssFilter: "true"
+    contentTypeNoSniff: "true"
+    forceSTSHeader: "true"
+    frameDeny: "true"
+    stsIncludeSubdomains: "true"
+    stsPreload: "true"
+    stsSeconds: 315360000
+    customFrameOptionsValue: SAMEORIGIN

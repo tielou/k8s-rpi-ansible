@@ -1,0 +1,58 @@
+---
+- name: Install nfs
+  apt:
+    name:
+      - nfs-common
+      - nfs-kernel-server
+    state: present
+
+- name: Create NFS share dirs
+  file:
+    path: "{{ item.share }}"
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: www-data
+    mode: 0775
+  with_items: "{{ nfs_shares }}"
+  when: nfs == 'yes'
+
+- name: Write nfs export entries
+  lineinfile:
+    path: /etc/exports
+    line: "{{ item.share }} *(rw,sync,no_root_squash,no_subtree_check)"
+    owner: root
+    group: root
+    mode: '0644'
+    create: yes
+  with_items: "{{ nfs_shares }}"
+  when: nfs == 'yes'
+  register: nfs_config
+
+- name: Restart nfs if exports changed
+  systemd:
+    name: nfs-kernel-server
+    state: restarted 
+    enabled: yes
+  when:
+    - nfs == 'yes'
+    - nfs_config.changed
+
+- name: Mount NFS volumes
+  mount:
+    name: "{{ item.mount }}"
+    src: "{{ nfs_master_ip }}:{{ item.share }}"
+    fstype: nfs
+    opts: "noauto,x-systemd.automount,x-systemd.device-timeout=10,timeo=14"
+    state: mounted
+  with_items: "{{ nfs_shares }}"
+
+- name: Deploy nfs client manifest
+  k8s:
+    definition: "{{ lookup('template', lookup('vars', 'playbook_dir') + '/manifests/default/nfs-client.yml') | from_yaml_all | list }}"
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+  register: result
+  until: result is success
+  retries: 3
+  run_once: True
+  when: role == 'master'

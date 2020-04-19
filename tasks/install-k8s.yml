@@ -1,0 +1,100 @@
+---
+- name: Add Google apt key
+  apt_key:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    state: present
+
+- name: Add Kubernetes repo
+  apt_repository:
+    repo: "deb http://apt.kubernetes.io/ kubernetes-xenial main"
+    state: present
+    update_cache: true
+
+- name: Install kubernetes
+  apt:
+    name:
+      - kubelet={{ kubernetes_version }}
+      - kubectl={{ kubernetes_version }}
+      - kubeadm={{ kubernetes_version }}
+      - kubernetes-cni
+    state: present
+
+- name: Start kubelet and enable systemd unit
+  systemd:
+    name: kubelet
+    state: started
+    enabled: true
+
+- name: Check if Kubernetes has already been initialized.
+  stat:
+    path: /etc/kubernetes/admin.conf
+  register: k8s_init
+
+- name: Init master
+  command: |
+    kubeadm init 
+    --pod-network-cidr={{ pod_network_cidr }}
+  register: kubeadmin_init
+  when: 
+    - not k8s_init.stat.exists
+    - role == 'master'
+
+- name: Create .kube directory in the home directory
+  file:
+    path: ~/.kube
+    state: directory
+    owner: "{{ deploy_user }}"
+  when: role == 'master'
+
+- name: Copy the config to the home directory
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: ~/.kube/config
+    owner: "{{ deploy_user }}"
+    remote_src: yes
+  when: role == 'master'
+
+- name: Download k8s config to local
+  fetch:
+    src: ~/.kube/config
+    dest: "{{ kubeconfig_path }}"
+    flat: true
+  when: role == 'master'
+  run_once: true
+
+- name: Deploy flannel networking
+  k8s:
+    definition: "{{ lookup('template', lookup('vars', 'playbook_dir') + '/manifests/default/flannel-networking.yml') | from_yaml_all | list }}"
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+  register: result
+  until: result is success
+  retries: 3
+  run_once: True
+  when: role == 'master'
+
+- name: Register k8s join command from master
+  command: kubeadm token create --print-join-command
+  changed_when: false
+  when: role == 'master'
+  register: kubernetes_join
+
+- name: Set the join command for the nodes
+  set_fact:
+    k8s_join: |
+      {{ kubernetes_join.stdout }}
+  when: kubernetes_join.stdout is defined
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+  with_items: "{{ groups['k8s'] }}"
+
+- name: Let nodes join
+  command: |
+    {{ k8s_join }}
+    creates=/etc/kubernetes/kubelet.conf
+
+# with the latest kubernetes and flannel i was running into issues without executing this command. See https://github.com/kubernetes/kubeadm/issues/193#issuecomment-343554096
+- name: Allow iptables forwarding
+  iptables:
+    chain: FORWARD
+    jump: ACCEPT
