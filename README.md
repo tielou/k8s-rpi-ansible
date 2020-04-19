@@ -24,7 +24,7 @@ git clone https://github.com/tielou/k8s-rpi-ansible.git
 Open the `vars/main.yml` in your favorite text editor and adjust the values as desired. Find a detailed declaration further down.
 Afterwards open the `ìnventory` file and adjust the IP's accordingly to the static ones you set for your RPI's. If you want to connect to the RPI's through another user than `pi` change the `ansible_ssh_user` variable.
 If you would like to verify the connectivity and the Ansible configuration you can run:
-````
+```
 ansible all -i inventory -m ping
 ```
 If this succeeds you can trigger the execution of the playbook by running:
@@ -34,6 +34,7 @@ ansible-playbook -i inventory main.yml
 
 After the run succeeded you can verify the funtionality by running:
 `kubectl get nodes`
+
 ```
 NAME            STATUS   ROLES    AGE   VERSION
 tipi-master-1   Ready    master   1m   v1.18.2
@@ -41,7 +42,9 @@ tipi-node-1     Ready    <none>   1m   v1.18.2
 tipi-node-2     Ready    <none>   1m   v1.18.2
 tipi-node-3     Ready    <none>   1m   v1.18.2
 ```
+
 and `kubectl get pods -A`
+
 ```
 NAMESPACE     NAME                                     READY   STATUS    RESTARTS   AGE
 default       nfs-client-provisioner-598449f86-zl8pq   2/2     Running   0          26h
@@ -63,6 +66,7 @@ kube-system   traefik-ingress-lb-b7k29                 1/1     Running   0      
 kube-system   traefik-ingress-lb-h9k4k                 1/1     Running   0          26h
 kube-system   traefik-ingress-lb-l57hf                 1/1     Running   0          26h
 ```
+
 ### Traefik
 This playbook deploys Traefik 2.2 as ingress load balancer for the Kubernetes setup. Traefik exposes 2 public ports with this configuration on the nodes:
 * 80 for http (you can enable immediate redirect for all http traffic in the `traefik-ingress.yml`)
