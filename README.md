@@ -93,6 +93,6 @@ To use them within PVC's, the PVC definition needs to carry the name of the stor
 * `kubernetes_version` Define the desired K8S version here, please be aware this is the Debian specific version number. This was tested with `1.18.2-00`.
 * `nfs_shares` Define your desired NFS shares here. The `share` variable reflects the path of the mount on the nfs server whereas `mount` specifies the mount path on the client side.
 * `nfs_master_ip` Define the static ip of your NFS server. This is used for the mounts on the client RPI's as well as for the nfs client provisioner deployment.
-* `pod_network_cidr` Define your desired cidr range for the pods inside Kubernetes here. If you change the default, make sure to also adjust the variable `Network` in `flannel-networking.yml` at line 129.
+* `pod_network_cidr` Define your desired cidr range for the pods inside Kubernetes here. If you change the default, make sure to also adjust the variable `Network` in `flannel-networking.yml` at line 129.
 * `kubeconfig_path` Define where you would like to store your Kubernetes configuration locally.
 * `k8s_user_manifests` If you would like to deploy additional Kubernetes manifests declare them here and put them in `manifests/user`. You can set the namespace here, which will be created if not present. This playbook includes a sample deployment for Nextcloud.
