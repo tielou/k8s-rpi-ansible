@@ -21,9 +21,11 @@ Clone this git repository by running:
 ```
 git clone https://github.com/tielou/k8s-rpi-ansible.git
 ```
-Open the `vars/main.yml` in your favorite text editor and adjust the values as desired. Find a detailed declaration further down.
-Afterwards open the `ìnventory` file and adjust the IP's accordingly to the static ones you set for your RPI's. If you want to connect to the RPI's through another user than `pi` change the `ansible_ssh_user` variable.
-If you would like to verify the connectivity and the Ansible configuration you can run:
+Open the `vars/main.yml` in your favorite text editor and adjust the values as desired. Find a detailed declaration further down this readme.
+Afterwards open the `ìnventory` file and adjust the IP's accordingly to the static ones you set for your RPI's.
+Use the `role` variable in there to define which Kubernetes role (Master or Node) this RPI should become. If you want to set up an NFS server on one of the RPI's make sure to set `nfs=yes`for one of the hosts and define `nfs_shares` in the `vars/main.yml`.
+If you want to connect to the RPI's through another user than `pi` change the `ansible_ssh_user` variable.
+You can then verify the connectivity to the RPI's through ansible by running:
 ```
 ansible all -i inventory -m ping
 ```
@@ -79,12 +81,18 @@ You can find a sample Traefik configuration for a service at https://github.com/
 
 You can find the Traefik dashboard at `http://x.x.x.x:8080/dashboard/` Replace `x.x.x.x` with any of your node IP's
 
+### NFS
+This playbook has the capability to set up an NFS server on one of the RPI's and let the other nodes mount it as well as use this share for persistant volume claims within Kubernetes.
+The default configuration of this playbook creates two NFS shares: `/srv/nfs` and `/srv/nfs_hdd`. I used this to have fast flash storage mounted and slower hdd storage (through an external hdd) for bigger files.
+To use them within PVC's, the PVC definition needs to carry the name of the storage class in the annotations. Per default they are `storage-ssd` and `storage-hdd` respectively. You can find an example of a full PVC definition in the [https://github.com/tielou/k8s-rpi-ansible/blob/master/manifests/user/nextcloud.yml](Nextcloud manifest).
+
+
 ## Variables
 
 * `deploy_user` Define the user as which the whole playbook should be installed. For Raspbian the default user is `pi`.
 * `kubernetes_version` Define the desired K8S version here, please be aware this is the Debian specific version number. This was tested with `1.18.2-00`.
 * `nfs_shares` Define your desired NFS shares here. The `share` variable reflects the path of the mount on the nfs server whereas `mount` specifies the mount path on the client side.
 * `nfs_master_ip` Define the static ip of your NFS server. This is used for the mounts on the client RPI's as well as for the nfs client provisioner deployment.
-* `pod_network_cidr` Define your desired cidr range for the pods inside Kubernetes here. If you change the default, make sure to also adjust the variable `Network` in `flannel-networking.yml`, line 129.
+* `pod_network_cidr` Define your desired cidr range for the pods inside Kubernetes here. If you change the default, make sure to also adjust the variable `Network` in `flannel-networking.yml` at line 129.
 * `kubeconfig_path` Define where you would like to store your Kubernetes configuration locally.
 * `k8s_user_manifests` If you would like to deploy additional Kubernetes manifests declare them here and put them in `manifests/user`. You can set the namespace here, which will be created if not present. This playbook includes a sample deployment for Nextcloud.
