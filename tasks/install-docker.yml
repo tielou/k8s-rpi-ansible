@@ -5,23 +5,39 @@
   changed_when: false
   register: docker_present
 
-- name: Download docker install script
+- name: Download docker install script (Debian)
   get_url:
     url: https://get.docker.com/
     dest: /tmp/docker.sh
     mode: 0775
-  when: docker_present.rc == 1
+  when: 
+    - docker_present.rc == 1
+    - ansible_distribution == 'Debian'
 
-- name: Run Docker install script
+- name: Run Docker install script (Debian)
   command: /tmp/docker.sh
   environment:
     CHANNEL: stable
-  when: docker_present.rc == 1
+  when: 
+    - docker_present.rc == 1
+    - ansible_distribution == 'Debian'
 
 - name: Delete Docker install script
   file:
     path: /tmp/docker.sh
     state: absent
+  when: 
+    - docker_present.rc == 1
+    - ansible_distribution == 'Debian'
+
+## This is a temporary solution until Docker updates their repository for focal
+- name: Install Docker (Ubuntu)
+  apt: 
+    name: docker.io
+    state: latest
+  when: 
+    - docker_present.rc == 1
+    - ansible_distribution == 'Ubuntu'
 
 - name: Add deploy user to Docker group
   user:

@@ -12,6 +12,7 @@ It includes the following features:
 To successfully deploy Kubernetes with this playbook you need to set up some prerequisites before the first run:
 * Have a set of at least two Raspberry Pi's running with direct network connectivity
 * Fresh install of Raspbian Buster Lite on the RPI's (this was developed with version [raspbian_lite-2020-02-14](http://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/2020-02-13-raspbian-buster-lite.zip) )
+* Alternatively you can use Ubuntu 20.04 LTS - this was briefly tested though
 * SSH connectivity to the RPI's with public key authentication from the deployment computer
 * Ansible 2.9.6 installed on the deployment computer
 * Static IP's for the RPI's (and preferrably hostnames). See [this](https://thepihut.com/blogs/raspberry-pi-tutorials/how-to-give-your-raspberry-pi-a-static-ip-address-update)
