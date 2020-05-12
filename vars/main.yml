@@ -22,11 +22,15 @@ pod_network_cidr: '10.244.0.0/16'
 kubeconfig_path: ~/.kube/config
 
 # Define Kubernetes manifests to deploy here:
-k8s_user_manifests: []
-#   - path: mysql.yml
-#     namespace: nextcloud
-#   - path: nextcloud.yml
-#     namespace: nextcloud
+k8s_user_manifests: 
+  # - path: mysql.yml
+  #   namespace: nextcloud
+  # - path: nextcloud.yml
+  #   namespace: nextcloud
+  # - path: plex.yml
+  #   namespace: plex
+  # - path: prometheus.yml
+  #   namespace: monitoring
 
-# # You can also use variables in your k8s manifests, this is for example used in the Nextcloud deployment
-# k8s_nextcloud_url: nextcloud.local
+# You can also use variables in your k8s manifests, this is for example used in the Nextcloud deployment
+# k8s_nextcloud_url: cloud.domain.tld

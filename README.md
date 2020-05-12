@@ -1,5 +1,5 @@
 # k8s-rpi-ansible
-This Ansible playbook deploys a fully featured Kubernetes cluster built on a set of Raspberry Pi's.
+This Ansible playbook deploys a fully featured Kubernetes cluster built on a set of Raspberry Pi's. Find the full story on my blog: https://blog.wobker.co/k8s-rpi-preamble/
 It includes the following features:
 * Kubernetes v1.18.2
 * Flannel-based networking v0.12
